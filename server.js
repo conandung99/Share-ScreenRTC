@@ -126,6 +126,6 @@ wsServer.on('request', function(request) {
 
 });
 
-server.listen(port, function() {
+server.listen(process.env.PORT || port, function() {
     console.log('Please open SSL URL: https://localhost: '+(port)+'/');
 });
