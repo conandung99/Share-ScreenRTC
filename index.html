@@ -1,0 +1,37 @@
+<html>
+  <head>
+    <title>WebRTC share Screen</title>
+    <script>
+      if (!location.hash.replace('#', '').length) {
+        location.href = location.href.split('#')[0] + '#' + (Math.random() * 100).toString().replace('.', '');
+        location.reload();
+      }
+    </script>
+  </head>
+  <link type="text/css" href="./css/style.css" rel="stylesheet"></link>
+  <body onload="init()">
+    <a img style="position: absolute; size: 100x100; right: -5cm; bottom: 10cm; border: 0;" src="https://webrtc.org/assets/images/webrtc-logo-horiz-retro-750x140.png"; class="rotate90"></a>
+    <a href="https://github.com/webRTC"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png" alt="Fork me on GitHub"></a>
+    <video id="video" autoplay controls></video>
+    <div id="log">
+        <!-- <strong style="position: relative; top: 30px; left: 10px; width: 80%">Log:</strong> -->
+        <strong> Log:</strong>
+    </div>
+
+    <!-- <div id="chatbox">
+      <div id="hideShowMessages" class="button">toggle chat</div>
+      <div id="messages">
+      </div>
+      <input id="chatinput" type="text" placeholder="Message:"/>
+    </div> -->
+
+    <div class="buttonBox">
+      <!-- <div id="fullscreen" class="button">Enter Full Screen</div> -->
+      <!-- <div id="newRoom" class="button">Create A New Room</div> -->
+      <div id="start" class="button">Start Capture</div>
+      <div id="stop" class="button">Stop Capture</div>
+    </div>
+    <!-- <script src="./dist/main.js"></script> -->
+    <script src="./src/app.js"></script>
+  </body>
+</html>
