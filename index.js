@@ -1,26 +1,30 @@
 var express = require('express');
-var app = express(),
-    server = require('http').createServer(app),
-    WebSocketServer = require('websocket').server;
-var httpPort = 9449,
-    port = process.env.port || httpPort;
+var app = express();
+var server = require('http').createServer(app);
+var WebSocketServer = require('websocket').server;
+var httpPort = 9449;
+var port = process.env.port || httpPort;
 
-app.use(express.static(__dirname + '/'));
+server.listen(process.env.port || port, function() {
+    console.log('Please open SSL URL: https://localhost: '+(port)+'/');
+});
 
-app.get('/index.html', function(req, res) {
+// app.use(express.static(__dirname + '/'));
+
+app.get('/', function(req, res) {
     res.sendFile(__dirname + '/index.html');
   });
 
 app.get('/favicon.ico', function(req, res) {
-    res.sendFile('/favicon.ico');
+    res.sendFile(__dirname + '/favicon.ico');
 });
 
 app.get('/css/style.css', function(req, res) {
-    res.sendFile('/css/style.css');
+    res.sendFile(__dirname + '/css/style.css');
 });
 
 app.get('/src/app.js', function(req, res) {
-    res.sendFile('/src/app.js');
+    res.sendFile(__dirname + '/src/app.js');
 });
 
 // app.get('/dist/main.js', function(req, res) {
@@ -124,8 +128,4 @@ wsServer.on('request', function(request) {
         console.log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected.');
     });
 
-});
-
-server.listen(process.env.port || port, function() {
-    console.log('Please open SSL URL: https://localhost: '+(port)+'/');
 });
