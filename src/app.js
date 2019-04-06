@@ -94,7 +94,8 @@ function init() {
   console.log("Wellcome!");
   var room = window.location.hash.slice(1);
   console.log("room is: " + room);
-  SERVER = window.location.origin.replace(/^http/,'ws');
+  // SERVER = window.location.origin.replace(/^http/,'ws');
+  SERVER = window.location.href.substring(window.location.protocol.length).split('#')[0];
 
   openChannel();
 
@@ -164,8 +165,8 @@ function initNewRoom() {
  */
 function openChannel () {
   console.log('Connect to websocket: ' + SERVER + ':' + httpPort);
-  // connection = new WebSocket(SERVER + + ':' + httpPort);
-  connection = new WebSocket('ws://localhost:9449/');
+  connection = new WebSocket('ws:' + SERVER + ':9449/');
+  // connection = new WebSocket('ws://localhost:9449/');
   
   // When connection open -> send some data to the server
   connection.onopen = onChannelOpened;
