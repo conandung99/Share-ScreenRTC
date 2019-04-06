@@ -11,9 +11,9 @@ app.get('/index.html', function(req, res) {
     res.sendFile(__dirname + '/index.html');
   });
 
-// app.get('/favicon.icon', function(req, res) {
-//     res.sendFile('/favicon.icon');
-// });
+app.get('/favicon.icon', function(req, res) {
+    res.sendFile('/favicon.icon');
+});
 
 app.get('/css/style.css', function(req, res) {
     res.sendFile('/css/style.css');
