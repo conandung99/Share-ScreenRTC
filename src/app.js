@@ -95,7 +95,7 @@ function init() {
   var room = window.location.hash.slice(1);
   console.log("room is: " + room);
   // SERVER = window.location.origin.replace(/^http/,'ws');
-  SERVER = window.location.href.substring(window.location.protocol.length).split('#')[0];
+  SERVER = window.location.hostname;
 
   openChannel();
 
@@ -164,9 +164,9 @@ function initNewRoom() {
  *    WEBRTC INITINAZING.......
  */
 function openChannel () {
-  console.log('Connect to websocket: ' + SERVER + ':' + httpPort);
-  connection = new WebSocket('ws:' + SERVER + ':9449/');
-  // connection = new WebSocket('ws://localhost:9449/');
+  console.log('Connect to websocket: ' + 'ws://' + SERVER + ':9449/');
+  // connection = new WebSocket('ws:' + SERVER + ':9449/');
+  connection = new WebSocket('ws://' + SERVER + ':9449/');
   
   // When connection open -> send some data to the server
   connection.onopen = onChannelOpened;
