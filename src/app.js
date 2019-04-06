@@ -166,7 +166,7 @@ function initNewRoom() {
 function openChannel () {
   console.log('Connect to websocket: ' + 'ws://' + SERVER + ':9449/');
   // connection = new WebSocket('ws:' + SERVER + ':9449/');
-  connection = new WebSocket('ws://' + SERVER + '/:9449/');
+  connection = new WebSocket('wss://' + SERVER + '/:9449/');
   
   // When connection open -> send some data to the server
   connection.onopen = onChannelOpened;
