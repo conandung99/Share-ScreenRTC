@@ -163,10 +163,9 @@ function initNewRoom() {
  *    WEBRTC INITINAZING.......
  */
 function openChannel () {
-  SERVER = SERVER + ':' + httpPort + '/';
-  console.log('Connect to websocket: ' + SERVER);
-  connection = new WebSocket(SERVER);
-  // connection = new WebSocket('ws://localhost:9449/');
+  console.log('Connect to websocket: ' + SERVER + ':' + httpPort);
+  // connection = new WebSocket(SERVER + + ':' + httpPort);
+  connection = new WebSocket('ws://localhost:9449/');
   
   // When connection open -> send some data to the server
   connection.onopen = onChannelOpened;
