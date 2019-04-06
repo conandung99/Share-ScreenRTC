@@ -5,7 +5,7 @@ var WebSocketServer = require('websocket').server;
 var httpPort = 9449;
 var port = process.env.port || httpPort;
 
-server.listen(process.env.port || port, function() {
+server.listen(process.env.PORT || port, function() {
     console.log('Please open SSL URL: https://localhost: '+(port)+'/');
 });
 
@@ -15,9 +15,9 @@ app.get('/', function(req, res) {
     res.sendFile(__dirname + '/index.html');
   });
 
-// app.get('/favicon.ico', function(req, res) {
-//     res.sendFile(__dirname + '/favicon.ico');
-// });
+app.get('/favicon.ico', function(req, res) {
+    res.sendFile(__dirname + '/favicon.ico');
+});
 
 app.get('/css/style.css', function(req, res) {
     res.sendFile(__dirname + '/css/style.css');
