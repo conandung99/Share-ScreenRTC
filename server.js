@@ -7,13 +7,13 @@ var httpPort = 9449,
 
 app.use(express.static(__dirname + '/'));
 
-app.get('/', function(req, res) {
+app.get('/index.html', function(req, res) {
     res.sendFile(__dirname + '/index.html');
   });
 
-app.get('/favicon.icon', function(req, res) {
-    res.sendFile('/favicon.icon');
-});
+// app.get('/favicon.icon', function(req, res) {
+//     res.sendFile('/favicon.icon');
+// });
 
 app.get('/css/style.css', function(req, res) {
     res.sendFile('/css/style.css');
