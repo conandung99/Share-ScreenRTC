@@ -194,8 +194,8 @@ function openChannel() {
   SERVER = SERVER.replace(/^http/, 'ws');
   console.log('Connect to websocket: ' + SERVER + ':9449/');
 
-  // connection = new WebSocket(SERVER + ':9449/');
-  connection = new WebSocket(SERVER);
+  connection = new WebSocket(SERVER + ':9449/');
+  // connection = new WebSocket(SERVER);
 
   // When connection open -> send some data to the server
   connection.onopen = onChannelOpened;
