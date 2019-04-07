@@ -41,7 +41,7 @@ wsServer = new WebSocketServer({
 // Declare the variable connections for rooms and users
 
 var connections = new Array();
-
+var guest = 0;
 // when a user connect:
 wsServer.on('request', function (request) {
     // variables declarations
@@ -83,10 +83,13 @@ wsServer.on('request', function (request) {
                 guest = connections[room].length;
                 message = JSON.stringify({ 'type': 'GETROOM', 'value': guest });
                 console.log(message);
-                // connection.send(message);
-                connections[room].forEach(function (destination) {
-                    destination.send(message);
-                });
+                if(guest > 2)
+                    connection.send(message);
+                else {
+                    connections[room].forEach(function (destination) {
+                        destination.send(message);
+                    });
+                }
 
                 break;
             /**
@@ -113,14 +116,15 @@ wsServer.on('request', function (request) {
     connection.on('close', function (reasonCode, description) {
         if (connections[room]) {
             connections[room].forEach(function (destination) {
-                if (destination != connection) {
+                if (destination != connection && guest <= 2) {
                     var message = JSON.stringify({ 'type': 'BYE', 'value': '' });
                     destination.send(message);
                 }
             });
         }
-        connections = new Array();
+        // connections = new Array();
         console.log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected.');
+        connections[room].pop();
     });
 
 });

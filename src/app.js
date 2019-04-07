@@ -30,13 +30,6 @@ var pcConfig = {
   iceServers: [
     {
       urls: [
-        'stun:webrtcweb.com:7788'
-      ],
-      username: 'muazkh',
-      credential: 'muazkh'
-    },
-    {
-      urls: [
         'stun:stun.l.google.com:19302',
         'stun:stun1.l.google.com:19302',
         'stun:stun2.l.google.com:19302',
@@ -44,6 +37,13 @@ var pcConfig = {
         'stun:numb.viagenie.ca',
         'stun:ss-turn2.xirsys.com'
       ]
+    },
+    {
+      urls: [
+        'stun:webrtcweb.com:7788'
+      ],
+      username: 'muazkh',
+      credential: 'muazkh'
     },
     {
       urls: [
@@ -82,7 +82,7 @@ var displayMediaOptions = {
   video: {
     aspectRatio: 1920 / 1080,
     cursor: "never",
-    frameRate: { ideal: 24, max: 60 }
+    frameRate: { ideal: 25, max: 60 }
   },
   audio: false
 };
@@ -92,16 +92,18 @@ var displayMediaOptions = {
 */
 function init() {
   console.log("Wellcome!");
+
   room = window.location.hash.slice(1);
   console.log("room is: " + room);
   initNewRoom();
+  initFullScreen();
+
   // SERVER = window.location.origin.replace(/^http/,'ws');
   SERVER = window.location.origin.replace('#', '');
-  // pc = new RTCPeerConnection(pcConfig);
+
   openChannel();
 
   // Set event listeners for the start and stop buttons
-
   startElem.addEventListener("click", function (evt) {
     startCapture();
   }, false);
@@ -164,18 +166,26 @@ function initNewRoom() {
   }, false);
 }
 
+function initFullScreen() {
+  var button = document.getElementById("fullscreen");
+  button.addEventListener('click', function (event) {
+    //show full screen
+    videoElem.webkitRequestFullScreen();
+  });
+}
+
 /**
  * Allow to reset the status in the footer
  * @return {void}
  */
-resetStatus = function() {
+resetStatus = function () {
   /**
    * if you aren't the guest it provides you a link to invite someone in the footer
    */
-  if (guest==1) {
-      setStatus("<div class=\"alert\">Waiting for someone to join: <a href=\""+window.location.href+"\">"+window.location.href+"</a></div>");
+  if (guest == 1) {
+    setStatus("<div class=\"alert\">Waiting for someone to join: <a href=\"" + window.location.href + "\">" + window.location.href + "</a></div>");
   } else {
-      setStatus("Initializing...");
+    setStatus("Initializing...");
   }
 };
 
@@ -183,7 +193,7 @@ resetStatus = function() {
 * Set the footer
 * @param {string} state : string to be placed in the footer
 */
-setStatus = function(state) {
+setStatus = function (state) {
   linkElem.innerHTML = `<br>${state}<br>`;
 };
 
@@ -218,10 +228,10 @@ function onChannelOpened() {
   console.log('Channel Openend: ' + room);
 
   // Create message -> server to request connection with broadcast
-  message = JSON.stringify({"type" : "JOINROOM", "value" : room});
+  message = JSON.stringify({ "type": "JOINROOM", "value": room });
   console.log(message);
   connection.send(message);
-  
+
   // maybeStart();
 }
 
@@ -248,8 +258,10 @@ onChannelMessage = function (message) {
       guest = message["value"];
       console.log('GUEST: ' + guest);
       // resetStatus();
-      if (guest==2) {
+      if (guest == 2) {
         maybeStart();
+      } else if (guest > 2) {
+        alert("The Room is FULL!");
       }
       break;
     case "candidate":
@@ -262,7 +274,7 @@ onChannelMessage = function (message) {
 
       break;
     case "offer":
-      if(!started)
+      if (!started)
         maybeStart();
 
       pc.setRemoteDescription(new RTCSessionDescription(message));
@@ -284,7 +296,8 @@ onChannelMessage = function (message) {
 onChannelBye = function () {
   console.log('Session terminated.');
   guest = 0;
-  started = broadcast = false;
+  pc = null;
+  started = false;
   setStatus("<div class=\"alert alert-info\">Your partner have left the call.</div>");
 };
 /**
@@ -324,19 +337,18 @@ onSignalingMessage = function (message) {
 };
 
 maybeStart = function () {
-  console.log('Starting RTC.....');
+  setStatus("Connecting...");
   createPeerConnection();
 
   console.log("Adding local stream.");
   if (broadcast && localStream) {
-    pc.addStream(localStream);
-    // localStream.getTracks().forEach(function(track) {
-    //   pc.addTrack(track, localStream);
-    // });
+    // pc.addStream(localStream);
+    localStream.getTracks().forEach(function (track) {
+      pc.addTrack(track, localStream);
+    });
   }
 
-  // if(!broadcast && !started)
-  if(broadcast && !started)
+  if (broadcast && !started)
     doCall();
 
   started = true;
@@ -379,8 +391,11 @@ setLocalAndSendMessage = function (sessionDescription) {
 onRemoteStreamAdded = function (event) {
   console.log("Remote stream added.");
   // attachMediaStream(remoteVideo[0], event.stream);
-  videoElem.srcObject = event.stream;
-  // videoElem.onplaying();
+  if (!broadcast) {
+    videoElem.srcObject = event.stream;
+    videoElem.play();
+  }
+  setStatus("<div class=\"alert alert-success\">Is currently in video conference </div>");
 };
 
 /**
