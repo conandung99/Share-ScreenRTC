@@ -3,9 +3,10 @@
  */
 const videoElem = document.getElementById("video");
 const logElem = document.getElementById("log");
+const linkElem = document.getElementById("footer");
 const startElem = document.getElementById("start");
 const stopElem = document.getElementById("stop");
-// const newRoom = document.getElementById("newRoom");
+const newRoom = document.getElementById("newRoom");
 
 /**
  * // Declarations RTC variables
@@ -13,7 +14,7 @@ const stopElem = document.getElementById("stop");
 var SERVER;
 const httpPort = 9449;
 
-var guest = 0, room, started = false;
+var broadcast = false, guest = 0, room, started = false;
 var pc, connection, message, localStream;
 var chanelReady = false;
 
@@ -25,7 +26,6 @@ var sdpConstraints = {
   }
 };
 
-// var pcConfig = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
 var pcConfig = {
   iceServers: [
     {
@@ -92,18 +92,15 @@ var displayMediaOptions = {
 */
 function init() {
   console.log("Wellcome!");
-  var room = window.location.hash.slice(1);
+  room = window.location.hash.slice(1);
   console.log("room is: " + room);
+  initNewRoom();
   // SERVER = window.location.origin.replace(/^http/,'ws');
-  SERVER = window.location.origin.replace('#','');
-
+  SERVER = window.location.origin.replace('#', '');
+  // pc = new RTCPeerConnection(pcConfig);
   openChannel();
 
   // Set event listeners for the start and stop buttons
-  // newRoom.addEventListener("click", function(evt) {
-  //   console.log("create Room!");
-  //   initNewRoom();
-  // }, false);
 
   startElem.addEventListener("click", function (evt) {
     startCapture();
@@ -121,15 +118,10 @@ function init() {
 
 async function startCapture() {
   logElem.innerHTML = "";
-
+  broadcast = true;
   try {
-    videoElem.srcObject = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
-    // navigator.mediaDevices.getDisplayMedia(displayMediaOptions)
-    // .then(stream => {
-    //   localStream = stream;
-    //   videoElem.srcObject = stream;
-    // });
-    maybeStart();
+    localStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+    resetStatus();
     dumpOptionsInfo();
   } catch (err) {
     console.error("Error: " + err);
@@ -144,7 +136,7 @@ function stopCapture(evt) {
 }
 
 function dumpOptionsInfo() {
-  localStream = videoElem.srcObject;
+  videoElem.srcObject = localStream;
   const videoTrack = videoElem.srcObject.getVideoTracks()[0];
 
   console.warn("TRACK SETTINGS:");
@@ -154,21 +146,57 @@ function dumpOptionsInfo() {
 }
 
 function initNewRoom() {
-  if (!location.hash.replace('#', '').length) {
-    location.href = location.href.split('#')[0] + '#' + (Math.random() * 100).toString().replace('.', '');
+  newRoom.addEventListener("click", function (evt) {
+    // var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
+    var chars = "0123456789";
+    var string_length = 8;
+    var randomstring = '';
+    for (var i = 0; i < string_length; i++) {
+      var rnum = Math.floor(Math.random() * chars.length);
+      randomstring += chars.substring(rnum, rnum + 1);
+    }
+
+    window.location.hash = randomstring;
     location.reload();
-  }
+
+    room = window.location.hash.slice(1);
+    console.log("create Room:" + room);
+  }, false);
 }
+
+/**
+ * Allow to reset the status in the footer
+ * @return {void}
+ */
+resetStatus = function() {
+  /**
+   * if you aren't the guest it provides you a link to invite someone in the footer
+   */
+  if (guest==1) {
+      setStatus("<div class=\"alert\">Waiting for someone to join: <a href=\""+window.location.href+"\">"+window.location.href+"</a></div>");
+  } else {
+      setStatus("Initializing...");
+  }
+};
+
+/**
+* Set the footer
+* @param {string} state : string to be placed in the footer
+*/
+setStatus = function(state) {
+  linkElem.innerHTML = `<br>${state}<br>`;
+};
 
 /**
  *    WEBRTC INITINAZING.......
  */
-function openChannel () {
-  SERVER = SERVER.replace(/^http/,'ws');
-  console.log('Connect to websocket: ' + 'ws://' + SERVER + ':9449/');
-  // connection = new WebSocket('ws:' + SERVER + ':9449/');
-  connection = new WebSocket(SERVER + '/:9449/');
-  
+function openChannel() {
+  SERVER = SERVER.replace(/^http/, 'ws');
+  console.log('Connect to websocket: ' + SERVER + ':9449/');
+
+  // connection = new WebSocket(SERVER + ':9449/');
+  connection = new WebSocket(SERVER);
+
   // When connection open -> send some data to the server
   connection.onopen = onChannelOpened;
 
@@ -187,26 +215,21 @@ function openChannel () {
  * @return void
  */
 function onChannelOpened() {
-  console.log('Channel Openend: ' + guest);
-  if(!guest) {
-    message = JSON.stringify({"type" : "GETROOM", "value" : room});
-    console.log(message);
-    connection.send(message);
-  }
-  else {
-    // Create message -> server to request connection with broadcast
-    message = JSON.stringify({"type" : "INVITE", "value" : room});
-    console.log(message);
-    connection.send(message);
-  }
-  maybeStart();
+  console.log('Channel Openend: ' + room);
+
+  // Create message -> server to request connection with broadcast
+  message = JSON.stringify({"type" : "JOINROOM", "value" : room});
+  console.log(message);
+  connection.send(message);
+  
+  // maybeStart();
 }
 
 /**
  * log that the channel is closed
  * @return {[type]}
  */
-onChannelClosed = function() {
+onChannelClosed = function () {
   console.log('Channel closed.');
 };
 
@@ -215,79 +238,75 @@ onChannelClosed = function() {
  * @param  {message} message : SDP message
  * @return {void}
  */
-onChannelMessage = function(message) {
-    message = JSON.parse(message.data);
-    console.log(message);
-    console.log('S->C: ' + message["value"]);
+onChannelMessage = function (message) {
+  message = JSON.parse(message.data);
+  console.log(message);
+  console.log('S->C: ' + message["value"]);
 
-    switch(message["type"]) {
-      case "GETROOM" :
-        guest = message["value"];
-        console.log('GUEST: ' + guest);
-        // resetStatus();
-        if(guest) {
-          onChannelOpened();
-        }
+  switch (message["type"]) {
+    case "GETROOM":
+      guest = message["value"];
+      console.log('GUEST: ' + guest);
+      // resetStatus();
+      if (guest==2) {
+        maybeStart();
+      }
       break;
-      case "candidate" :
-        var candidate = new RTCIceCandidate({
-                                              sdpMLineIndex:message.label,
-                                              candidate:message.candidate
-                                            });
+    case "candidate":
+      var candidate = new RTCIceCandidate({
+        sdpMLineIndex: message.label,
+        candidate: message.candidate
+      });
 
-	 pc.addIceCandidate(candidate);
+      pc.addIceCandidate(candidate);
 
       break;
-      case "offer" :
-
-      // Callee creates PeerConnection
-      if (!guest && !started)
+    case "offer":
+      if(!started)
         maybeStart();
 
-        pc.setRemoteDescription(new RTCSessionDescription(message));
-        doAnswer();
+      pc.setRemoteDescription(new RTCSessionDescription(message));
+      doAnswer();
       break;
-      case "answer" :
-        pc.setRemoteDescription(new RTCSessionDescription(message));
+    case "answer":
+      pc.setRemoteDescription(new RTCSessionDescription(message));
       break;
-      case "BYE" :
-        onChannelBye();
+    case "BYE":
+      onChannelBye();
       break;
-    }
+  }
 };
 
 /**
  * Called when the other client is leaving
  * @return {void}
  */
-onChannelBye = function() {
+onChannelBye = function () {
   console.log('Session terminated.');
-  remoteVideo.css("opacity", "0");
-  $("#remotelive").addClass('hide');
-  //remoteVideo.attr("src",null);
   guest = 0;
-  started = false;
+  started = broadcast = false;
   setStatus("<div class=\"alert alert-info\">Your partner have left the call.</div>");
 };
 /**
  * Set parameter for creating a peer connection and add a callback function for messagin by peer connection
  * @return {void}
  */
-createPeerConnection = function() {
+createPeerConnection = function () {
   console.log('Create PeerConnection');
   try {
     // Create an RTCPeerConnection via the polyfill (adapter.js).
     // pc = new RTCPeerConnection(pcConfig, pcConstraints);
     pc = new RTCPeerConnection(pcConfig);
     pc.onicecandidate = onIceCandidate;
-    console.log('Created RTCPeerConnnection with:\n' +
-      '  config: \'' + JSON.stringify(pcConfig) + '\';\n' +
-      '  constraints: \'' + JSON.stringify(pcConstraints) + '\'.');
+    // console.log('Created RTCPeerConnnection with:\n' +
+    //   '  config: \'' + JSON.stringify(pcConfig) + '\';\n' +
+    //   '  constraints: \'' + JSON.stringify(pcConstraints) + '\'.');
   } catch (e) {
     console.log('Failed to create PeerConnection, exception: ' + e.message);
     alert('Cannot create RTCPeerConnection object; WebRTC is not supported by this browser.');
     return;
   }
+
 
   pc.onaddstream = onRemoteStreamAdded;
   pc.onremovestream = onRemoteStreamRemoved;
@@ -298,69 +317,70 @@ createPeerConnection = function() {
  * @param  {message} message : generated by the peerConnection API to send SDP message
  * @return {void}
  */
- onSignalingMessage = function(message) {
+onSignalingMessage = function (message) {
   console.log("onSignalingMessage " + message);
   message = JSON.stringify(message);
   connection.send(message);
 };
 
-maybeStart = function() {
-  console.log('Start Initing RTC.....');
-  console.log("Creating PeerConnection.");
+maybeStart = function () {
+  console.log('Starting RTC.....');
   createPeerConnection();
+
   console.log("Adding local stream.");
-  if (!guest && localStream)
+  if (broadcast && localStream) {
     pc.addStream(localStream);
-  // if (guest)
+    // localStream.getTracks().forEach(function(track) {
+    //   pc.addTrack(track, localStream);
+    // });
+  }
+
+  // if(!broadcast && !started)
+  if(broadcast && !started)
     doCall();
+
+  started = true;
+  console.log("Peer - Peer Accept Connected");
 };
 
 doCall = function () {
   var constraints = mergeConstraints(offerConstraints, sdpConstraints);
-     console.log('Sending offer to peer, with constraints: \n' +
-                 '  \'' + JSON.stringify(constraints) + '\'.');
-     // pc.createOffer(setLocalAndSendMessage, null, constraints);
-     pc.createOffer(constraints).then(function(offer) {
-       return setLocalAndSendMessage(offer);
-     });
- };
- 
- doAnswer = function () {
-   console.log("Sending answer to peer.");
-   // pc.createAnswer(setLocalAndSendMessage, null, sdpConstraints);
-   pc.createAnswer(sdpConstraints).then(function(answer) {
-     return setLocalAndSendMessage(answer);
-   });
- };
- 
- mergeConstraints = function (cons1, cons2) {
-   var merged = cons1;
-   for (var name in cons2.mandatory) {
-     merged.mandatory[name] = cons2.mandatory[name];
-   }
-   merged.optional.concat(cons2.optional);
-   return merged;
- };
- 
- setLocalAndSendMessage = function (sessionDescription) {
-   // Set Opus as the preferred codec in SDP if Opus is present.
-   sessionDescription.sdp = preferOpus(sessionDescription.sdp);
-   pc.setLocalDescription(sessionDescription);
-   onSignalingMessage(sessionDescription);
- };
- /**
-  * STREAM SEND / RECIEVE =============
-  */
+  console.log('Sending offer to peer, with constraints: \n' +
+    '  \'' + JSON.stringify(constraints) + '\'.');
+  // pc.createOffer(setLocalAndSendMessage, null, constraints);
+  pc.createOffer(constraints).then(function (offer) {
+    return setLocalAndSendMessage(offer);
+  });
+};
+
+doAnswer = function () {
+  console.log("Sending answer to peer.");
+  // pc.createAnswer(setLocalAndSendMessage, null, sdpConstraints);
+  pc.createAnswer(sdpConstraints).then(function (answer) {
+    return setLocalAndSendMessage(answer);
+  });
+};
+
+setLocalAndSendMessage = function (sessionDescription) {
+  // Set Opus as the preferred codec in SDP if Opus is present.
+  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
+  pc.setLocalDescription(sessionDescription);
+  onSignalingMessage(sessionDescription);
+};
+/**
+ * STREAM SEND / RECIEVE =============
+ */
 
 /**
  * Get the remote stream and add it to the page with an url
  * @param  {event} event : event given by the browser
  * @return {void}
  */
- onRemoteStreamAdded = function(event) {
+onRemoteStreamAdded = function (event) {
   console.log("Remote stream added.");
   // attachMediaStream(remoteVideo[0], event.stream);
   videoElem.srcObject = event.stream;
+  // videoElem.onplaying();
 };
 
 /**
@@ -368,46 +388,26 @@ doCall = function () {
  * @param  {event} event : event given by the browser
  * @return {void}
  */
-onRemoteStreamRemoved = function(event) {
+onRemoteStreamRemoved = function (event) {
   console.log("Remote stream removed.");
 };
- /**
-  * /////////================
-  */
+/**
+ * /////////================
+ */
 
 /**
  *  ICE + SDP Creating.....
  */
-/**
- * Called when the peer connection is connecting
- * @param  {message} message
- * @return {void}
- */
-onSessionConnecting = function(message) {
-  console.log("Session connecting.");
-};
 
-/**
- * Called when the session between clients is established
- * @param  {message} message
- * @return {void}
- */
- onSessionOpened = function(message) {
-  console.log("Session opened.");
-    // Caller creates PeerConnection.
-    if (guest) maybeStart();
-  };
-
-/**
- *  ICE
- */
-
-onIceCandidate = function(event) {
+onIceCandidate = function (event) {
+  console.log('ICE Candidate');
   if (event.candidate) {
-    onSignalingMessage({type: 'candidate',
-     label: event.candidate.sdpMLineIndex,
-     id: event.candidate.sdpMid,
-     candidate: event.candidate.candidate});
+    onSignalingMessage({
+      type: 'candidate',
+      label: event.candidate.sdpMLineIndex,
+      id: event.candidate.sdpMid,
+      candidate: event.candidate.candidate
+    });
   } else {
     console.log("End of candidates.");
   }
@@ -447,7 +447,7 @@ preferOpus = function (sdp) {
 
 extractSdp = function (sdpLine, pattern) {
   var result = sdpLine.match(pattern);
-  return (result && result.length == 2)? result[1]: null;
+  return (result && result.length == 2) ? result[1] : null;
 };
 
 // Set the selected codec to the first in m line.
@@ -468,7 +468,7 @@ setDefaultCodec = function (mLine, payload) {
 removeCN = function (sdpLines, mLineIndex) {
   var mLineElements = sdpLines[mLineIndex].split(' ');
   // Scan from end for the convenience of removing an item.
-  for (var i = sdpLines.length-1; i >= 0; i--) {
+  for (var i = sdpLines.length - 1; i >= 0; i--) {
     var payload = extractSdp(sdpLines[i], /a=rtpmap:(\d+) CN\/\d+/i);
     if (payload) {
       var cnPos = mLineElements.indexOf(payload);
@@ -483,6 +483,15 @@ removeCN = function (sdpLines, mLineIndex) {
 
   sdpLines[mLineIndex] = mLineElements.join(' ');
   return sdpLines;
+};
+
+mergeConstraints = function (cons1, cons2) {
+  var merged = cons1;
+  for (var name in cons2.mandatory) {
+    merged.mandatory[name] = cons2.mandatory[name];
+  }
+  merged.optional.concat(cons2.optional);
+  return merged;
 };
 
 // module.exports = init;

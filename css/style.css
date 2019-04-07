@@ -30,9 +30,19 @@ body {
   position: relative;
   top: 1cm;
   left: 10px;
-  width: 80%;
-  height: 80%;
+  width: 60%;
+  height: 60%;
 }
+#footer {
+  position: relative;
+  top: 1cm;
+  left: 10px;
+  width: 60%;
+  display: block;
+  border: 1px;
+  background-color: skyblue;
+}
+
 .error {
   color: red;
 }
@@ -49,7 +59,7 @@ body {
   position: relative;
   margin-left: 10px;
   top: 1cm;
-  width: 80%;
+  width: 60%;
   border: 1px solid #CCCCCC;
 }
 

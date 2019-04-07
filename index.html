@@ -3,16 +3,26 @@
     <title>WebRTC share Screen</title>
     <script>
       if (!location.hash.replace('#', '').length) {
-        location.href = location.href.split('#')[0] + '#' + (Math.random() * 100).toString().replace('.', '');
+        // var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
+    var chars = "0123456789";
+        var string_length = 8;
+        var randomstring = '';
+        for (var i = 0; i < string_length; i++) {
+          var rnum = Math.floor(Math.random() * chars.length);
+          randomstring += chars.substring(rnum, rnum + 1);
+        }
+
+        window.location.hash = randomstring;
         location.reload();
       }
     </script>
   </head>
   <link type="text/css" href="./css/style.css" rel="stylesheet"></link>
   <body onload="init()">
-    <a img style="position: absolute; size: 100x100; right: -5cm; bottom: 10cm; border: 0;" src="https://webrtc.org/assets/images/webrtc-logo-horiz-retro-750x140.png"; class="rotate90"></a>
+    <a> <img style="position: relative; top: 1cm; border: 0;" src="https://webrtc.org/assets/images/webrtc-logo-vert-retro-255x305.png"></a>
     <a href="https://github.com/conandung99"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png" alt="Fork me on GitHub"></a>
-    <video id="video" autoplay controls></video>
+    <video id="video" autoplay></video>
+    <div id="footer"></div>
     <div id="log">
         <!-- <strong style="position: relative; top: 30px; left: 10px; width: 80%">Log:</strong> -->
         <strong> Log:</strong>
@@ -27,7 +37,7 @@
 
     <div class="buttonBox">
       <!-- <div id="fullscreen" class="button">Enter Full Screen</div> -->
-      <!-- <div id="newRoom" class="button">Create A New Room</div> -->
+      <div id="newRoom" class="button">Create A New Room</div>
       <div id="start" class="button">Start Capture</div>
       <div id="stop" class="button">Stop Capture</div>
     </div>
